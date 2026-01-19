@@ -1,0 +1,65 @@
+name: Submit to B12
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Submit to B12
+        run: |
+          # Your details
+          NAME="Vamsi Sai Ranga Mangina"
+          EMAIL="sairanga.mangina@gmail.com"
+          RESUME_LINK="https://drive.google.com/file/d/15zZvTzBCZl8mRLojCS7W9Xe92frXp4Dx/view?usp=sharing"
+          REPOSITORY_LINK="${{ github.server_url }}/${{ github.repository }}"
+          ACTION_RUN_LINK="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SIGNING_SECRET="hello-there-from-b12"
+          
+          # Generate ISO 8601 timestamp
+          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')
+          
+          echo "📝 Building payload..."
+          echo "Action Run: $ACTION_RUN_LINK"
+          
+          # Create JSON payload (alphabetically sorted, compact)
+          PAYLOAD=$(jq -n \
+            --arg action_run_link "$ACTION_RUN_LINK" \
+            --arg email "$EMAIL" \
+            --arg name "$NAME" \
+            --arg repository_link "$REPOSITORY_LINK" \
+            --arg resume_link "$RESUME_LINK" \
+            --arg timestamp "$TIMESTAMP" \
+            '{action_run_link, email, name, repository_link, resume_link, timestamp}' | \
+            jq -S -c .)
+          
+          echo "Payload: $PAYLOAD"
+          
+          # Generate HMAC-SHA256 signature
+          SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" -hex | cut -d' ' -f2)"
+          
+          echo "🔐 Signature: $SIGNATURE"
+          
+          # Submit to B12
+          echo "🚀 Submitting to B12..."
+          RESPONSE=$(curl -s -X POST https://b12.io/apply/submission \
+            -H "Content-Type: application/json" \
+            -H "X-Signature-256: $SIGNATURE" \
+            -d "$PAYLOAD")
+          
+          echo "Response: $RESPONSE"
+          
+          # Extract receipt
+          RECEIPT=$(echo "$RESPONSE" | jq -r '.receipt // "ERROR"')
+          
+          echo ""
+          echo "================================================"
+          echo "✅ SUBMISSION SUCCESSFUL!"
+          echo "================================================"
+          echo "📋 RECEIPT: $RECEIPT"
+          echo "================================================"
+          echo ""
+          echo "Copy and paste this receipt into the B12 confirmation field!"
