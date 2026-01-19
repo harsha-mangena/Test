@@ -10,23 +10,37 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Submit to B12
+        shell: bash
+        env:
+          NAME: Vamsi Sai Ranga Mangina
+          EMAIL: sairanga.mangina@gmail.com
+          RESUME_LINK: https://drive.google.com/file/d/15zZvTzBCZl8mRLojCS7W9Xe92frXp4Dx/view?usp=sharing
+          REPOSITORY_LINK: ${{ github.server_url }}/${{ github.repository }}
+          ACTION_RUN_LINK: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SIGNING_SECRET: hello-there-from-b12
         run: |
-          # Your details
-          NAME="Vamsi Sai Ranga Mangina"
-          EMAIL="sairanga.mangina@gmail.com"
-          RESUME_LINK="https://drive.google.com/file/d/15zZvTzBCZl8mRLojCS7W9Xe92frXp4Dx/view?usp=sharing"
-          REPOSITORY_LINK="${{ github.server_url }}/${{ github.repository }}"
-          ACTION_RUN_LINK="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          SIGNING_SECRET="hello-there-from-b12"
+          set -euo pipefail
           
           # Generate ISO 8601 timestamp
-          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')
+          export TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')
           
           echo "📝 Building payload..."
           echo "Action Run: $ACTION_RUN_LINK"
           
-          # Create JSON payload (alphabetically sorted, compact)
-          PAYLOAD=$(jq -n --arg action_run_link "$ACTION_RUN_LINK" --arg email "$EMAIL" --arg name "$NAME" --arg repository_link "$REPOSITORY_LINK" --arg resume_link "$RESUME_LINK" --arg timestamp "$TIMESTAMP" '{action_run_link: $action_run_link, email: $email, name: $name, repository_link: $repository_link, resume_link: $resume_link, timestamp: $timestamp}' | jq -S -c .)
+            # Create JSON payload (alphabetically sorted, compact)
+            PAYLOAD=$(python3 - <<'PY'
+      import json, os
+      payload = {
+        "action_run_link": os.environ.get("ACTION_RUN_LINK"),
+        "email": os.environ.get("EMAIL"),
+        "name": os.environ.get("NAME"),
+        "repository_link": os.environ.get("REPOSITORY_LINK"),
+        "resume_link": os.environ.get("RESUME_LINK"),
+        "timestamp": os.environ.get("TIMESTAMP"),
+      }
+      print(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+      PY
+            )
           
           echo "Payload: $PAYLOAD"
           
@@ -45,7 +59,17 @@ jobs:
           echo "Response: $RESPONSE"
           
           # Extract receipt
-          RECEIPT=$(echo "$RESPONSE" | jq -r '.receipt // "ERROR"')
+            export RESPONSE
+            RECEIPT=$(python3 - <<'PY'
+      import json, os
+      resp = os.environ.get("RESPONSE", "")
+      try:
+        data = json.loads(resp)
+        print(data.get("receipt") or "ERROR")
+      except Exception:
+        print("ERROR")
+      PY
+            )
           
           echo ""
           if [ "$RECEIPT" != "ERROR" ] && [ -n "$RECEIPT" ]; then
