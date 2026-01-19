@@ -26,15 +26,7 @@ jobs:
           echo "Action Run: $ACTION_RUN_LINK"
           
           # Create JSON payload (alphabetically sorted, compact)
-          PAYLOAD=$(jq -n \
-            --arg action_run_link "$ACTION_RUN_LINK" \
-            --arg email "$EMAIL" \
-            --arg name "$NAME" \
-            --arg repository_link "$REPOSITORY_LINK" \
-            --arg resume_link "$RESUME_LINK" \
-            --arg timestamp "$TIMESTAMP" \
-            '{action_run_link: $action_run_link, email: $email, name: $name, repository_link: $repository_link, resume_link: $resume_link, timestamp: $timestamp}' | \
-            jq -S -c .)
+          PAYLOAD=$(jq -n --arg action_run_link "$ACTION_RUN_LINK" --arg email "$EMAIL" --arg name "$NAME" --arg repository_link "$REPOSITORY_LINK" --arg resume_link "$RESUME_LINK" --arg timestamp "$TIMESTAMP" '{action_run_link: $action_run_link, email: $email, name: $name, repository_link: $repository_link, resume_link: $resume_link, timestamp: $timestamp}' | jq -S -c .)
           
           echo "Payload: $PAYLOAD"
           
