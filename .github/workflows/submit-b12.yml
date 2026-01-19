@@ -27,20 +27,20 @@ jobs:
           echo "📝 Building payload..."
           echo "Action Run: $ACTION_RUN_LINK"
           
-            # Create JSON payload (alphabetically sorted, compact)
-            PAYLOAD=$(python3 - <<'PY'
-      import json, os
-      payload = {
-        "action_run_link": os.environ.get("ACTION_RUN_LINK"),
-        "email": os.environ.get("EMAIL"),
-        "name": os.environ.get("NAME"),
-        "repository_link": os.environ.get("REPOSITORY_LINK"),
-        "resume_link": os.environ.get("RESUME_LINK"),
-        "timestamp": os.environ.get("TIMESTAMP"),
-      }
-      print(json.dumps(payload, separators=(",", ":"), sort_keys=True))
-      PY
-            )
+          # Create JSON payload (alphabetically sorted, compact)
+          PAYLOAD=$(python3 - <<'PY'
+import json, os
+payload = {
+    "action_run_link": os.environ.get("ACTION_RUN_LINK"),
+    "email": os.environ.get("EMAIL"),
+    "name": os.environ.get("NAME"),
+    "repository_link": os.environ.get("REPOSITORY_LINK"),
+    "resume_link": os.environ.get("RESUME_LINK"),
+    "timestamp": os.environ.get("TIMESTAMP"),
+}
+print(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+PY
+          )
           
           echo "Payload: $PAYLOAD"
           
@@ -59,17 +59,17 @@ jobs:
           echo "Response: $RESPONSE"
           
           # Extract receipt
-            export RESPONSE
-            RECEIPT=$(python3 - <<'PY'
-      import json, os
-      resp = os.environ.get("RESPONSE", "")
-      try:
-        data = json.loads(resp)
-        print(data.get("receipt") or "ERROR")
-      except Exception:
-        print("ERROR")
-      PY
-            )
+          export RESPONSE
+          RECEIPT=$(python3 - <<'PY'
+import json, os
+resp = os.environ.get("RESPONSE", "")
+try:
+    data = json.loads(resp)
+    print(data.get("receipt") or "ERROR")
+except Exception:
+    print("ERROR")
+PY
+          )
           
           echo ""
           if [ "$RECEIPT" != "ERROR" ] && [ -n "$RECEIPT" ]; then
