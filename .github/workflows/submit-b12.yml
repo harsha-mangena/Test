@@ -33,7 +33,7 @@ jobs:
             --arg repository_link "$REPOSITORY_LINK" \
             --arg resume_link "$RESUME_LINK" \
             --arg timestamp "$TIMESTAMP" \
-            '{action_run_link, email, name, repository_link, resume_link, timestamp}' | \
+            '{action_run_link: $action_run_link, email: $email, name: $name, repository_link: $repository_link, resume_link: $resume_link, timestamp: $timestamp}' | \
             jq -S -c .)
           
           echo "Payload: $PAYLOAD"
@@ -56,10 +56,19 @@ jobs:
           RECEIPT=$(echo "$RESPONSE" | jq -r '.receipt // "ERROR"')
           
           echo ""
-          echo "================================================"
-          echo "✅ SUBMISSION SUCCESSFUL!"
-          echo "================================================"
-          echo "📋 RECEIPT: $RECEIPT"
-          echo "================================================"
-          echo ""
-          echo "Copy and paste this receipt into the B12 confirmation field!"
+          if [ "$RECEIPT" != "ERROR" ] && [ -n "$RECEIPT" ]; then
+            echo "================================================"
+            echo "✅ SUBMISSION SUCCESSFUL!"
+            echo "================================================"
+            echo "📋 RECEIPT: $RECEIPT"
+            echo "================================================"
+            echo ""
+            echo "Copy and paste this receipt into the B12 confirmation field!"
+          else
+            echo "================================================"
+            echo "❌ SUBMISSION FAILED"
+            echo "================================================"
+            echo "Response: $RESPONSE"
+            echo "================================================"
+            exit 1
+          fi
